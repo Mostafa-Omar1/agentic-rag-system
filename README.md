@@ -46,7 +46,7 @@ documents → │ extract (PDF/DOCX/TXT/MD/CSV) → clean → chunk (paragraph/s
 ## Quick start
 
 ```bash
-git clone https://github.com/<your-user>/agentic-rag-system.git
+git clone https://github.com/Mostafa-Omar1/agentic-rag-system.git
 cd agentic-rag-system
 pip install -r requirements.txt
 python scripts/build_index.py      # optional – the app builds the index on first run
