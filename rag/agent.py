@@ -190,6 +190,10 @@ class ClaudeAgent:
 
 # =============================================================== offline agent
 _MATH = re.compile(r"(?:(?:sqrt|log|abs|round)\s*\()?[\d.,]+\s*(?:[-+*/^×÷%]\s*\(?\s*[\d.,]+\s*\)?\s*)+")
+_PERCENT_OF = re.compile(r"([\d.,]+)\s*%\s*(?:of|من)\s*([\d.,]+)")
+_PRICE = re.compile(r"([\d][\d,]*(?:\.\d+)?)\s*(?:usd|\$|dollars?)", re.I)
+_PERIODS = re.compile(r"(\d+)\s*(?:months?|years?|weeks?|days?|users?|units?|licen[cs]es?)", re.I)
+_SURCHARGE = re.compile(r"extra\s+(\d+(?:\.\d+)?)\s*%", re.I)
 _DATA_WORDS = {"average": "mean", "mean": "mean", "total": "sum", "sum": "sum", "median": "median",
                "maximum": "max", "highest": "max", "max": "max", "minimum": "min", "lowest": "min",
                "min": "min", "count": "count", "how many": "count", "متوسط": "mean", "إجمالي": "sum",
@@ -208,6 +212,10 @@ class OfflineAgent:
         plan = {"question_type": "simple_lookup", "needs_retrieval": True, "sub_questions": [], "steps": []}
         if re.fullmatch(r"\s*(hi|hello|hey|thanks|thank you|مرحبا|اهلا|السلام عليكم|شكرا)[!.\s]*", ql):
             plan.update(question_type="chit_chat", needs_retrieval=False, steps=["Reply directly"])
+            return plan
+        if m := _PERCENT_OF.search(ql):
+            plan.update(question_type="calculation", needs_retrieval=False, steps=["Use calculator"],
+                        expression=f"{m.group(1)} / 100 * {m.group(2)}")
             return plan
         leftover = re.sub(r"what is|what's|calculate|compute|how much is|equals?|احسب|كم|ناتج|يساوي", "",
                           _MATH.sub("", ql))
@@ -232,7 +240,30 @@ class OfflineAgent:
                         steps=[f"Search: {p}" for p in parts] + ["Combine evidence"])
         elif not plan["steps"]:
             plan["steps"] = ["Hybrid search", "Refine with keyword search if weak", "Extract answer"]
+        if plan["question_type"] in ("simple_lookup", "multi_hop") and _PRICE.search(q) and _PERIODS.search(q):
+            plan["question_type"] = "lookup_then_calculate"
+            plan["steps"] = plan["steps"][:-1] + ["Find pricing rules in the documents", "Use calculator"]
         return plan
+
+    def _derive_calculation(self, question: str, hits: list[dict], steps: list[Step]) -> str | None:
+        """Combine numbers from the question with rules found in the retrieved text (e.g. surcharges)."""
+        price = float(_PRICE.search(question).group(1).replace(",", ""))
+        periods = int(_PERIODS.search(question).group(1))
+        q_terms = set(tokenize(question))
+        expr, rule = f"{price:g} * {periods}", None
+        for h in hits:
+            for s in re.split(r"(?<=[.!?])\s+|\n+", h["text"]):
+                if (m := _SURCHARGE.search(s)) and len(q_terms & set(tokenize(s))) >= 2:
+                    expr, rule = f"{price:g} * (1 + {m.group(1)} / 100) * {periods}", (s.strip(" -*"), h["source"])
+                    break
+            if rule:
+                break
+        out = self.toolbox.calculator(expr)
+        steps.append(Step("tool", "calculator", input={"expression": expr}, output=out))
+        if "result" not in out:
+            return None
+        why = f' (applying: "{rule[0]}" [{rule[1]}])' if rule else ""
+        return f"**Calculation:** `{expr}` = **{out['result']:,}**{why}"
 
     @staticmethod
     def _match_table(ql: str, tables: list[str]) -> str | None:
@@ -282,7 +313,7 @@ class OfflineAgent:
                                mode="offline")
 
         if qt == "calculation":
-            expr = _MATH.search(question).group(0)
+            expr = plan.get("expression") or _MATH.search(question).group(0)
             out = self.toolbox.calculator(expr)
             steps.append(Step("tool", "calculator", input={"expression": expr}, output=out))
             return AgentResult(f"**{expr.strip()} = {out.get('result', out.get('error'))}**", steps, mode="offline")
@@ -350,6 +381,8 @@ class OfflineAgent:
             if len(queries) > 1:
                 lines.append(f"**{q.strip()}?**")
             lines += [f"- {s} [{src}]" for s, src in best]
+        if qt == "lookup_then_calculate" and (calc := self._derive_calculation(question, all_hits, steps)):
+            lines.insert(0, calc + "\n\n**Evidence:**")
         srcs = sorted({h["source"] for h in all_hits})
         lines.append("\n**Sources:** " + ", ".join(f"[{s}]" for s in srcs))
         lines.append("\n_Offline mode: extractive answer. Add an Anthropic API key for full reasoning._")

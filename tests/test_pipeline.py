@@ -79,3 +79,16 @@ def test_offline_agent_routes_tools(toolbox, question, expected_tool):
     assert result.steps[0].kind == "plan"
     assert expected_tool in [s.name for s in result.steps]
     assert result.answer
+
+
+def test_offline_agent_percent_of(toolbox):
+    result = OfflineAgent(toolbox).answer("What is 15% of 2400?")
+    assert "360" in result.answer
+
+
+def test_offline_agent_retrieves_then_calculates(toolbox):
+    q = "DocuMind costs 1,200 USD/month. What would 12 months with Premium support cost?"
+    result = OfflineAgent(toolbox).answer(q)
+    names = [s.name for s in result.steps]
+    assert names.index("search_knowledge_base") < names.index("calculator")
+    assert "17,280" in result.answer
