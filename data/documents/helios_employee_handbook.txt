@@ -1,0 +1,25 @@
+HELIOS ANALYTICS - EMPLOYEE HANDBOOK (2026 EDITION)
+
+1. About the company
+Helios Analytics is a fictional data and AI consultancy founded in 2019 and headquartered in Cairo, with a second office in Dubai opened in 2023. The company has around 240 employees across three departments: Consulting, Engineering and Operations.
+
+2. Working hours and remote work
+Standard working hours are 9:00 to 17:00, Sunday to Thursday. Employees may work remotely up to 2 days per week after completing their 3-month probation period. Engineering staff may request a fully remote arrangement, which must be approved by their department director.
+
+3. Annual leave
+Full-time employees receive 21 days of paid annual leave per year. After 5 years of service, annual leave increases to 30 days. Up to 5 unused days can be carried over to the next year; carried-over days expire on 31 March. Leave requests of more than 5 consecutive days must be submitted at least 2 weeks in advance.
+
+4. Sick leave
+Employees are entitled to 15 days of paid sick leave per year. A medical certificate is required for sick leave longer than 2 consecutive days.
+
+5. Learning and development
+Each employee has an annual learning budget of 12,000 EGP for courses, certifications and conferences. Engineering employees receive an additional 6,000 EGP for cloud certifications. Unused learning budget does not carry over.
+
+6. Performance reviews
+Performance reviews take place twice a year, in June and December. Ratings are on a 1-5 scale. Employees rated 4 or above in both reviews of a year are eligible for a bonus of up to 15% of annual salary.
+
+7. Equipment
+New employees receive a laptop on their first day. Laptops are replaced every 3 years. Employees working remotely may claim up to 3,000 EGP once for home-office equipment.
+
+8. Code of conduct and data security
+Client data must never be stored on personal devices. All employees must complete data-protection training within their first 30 days and renew it every year. Security incidents must be reported to the security team within 24 hours.
